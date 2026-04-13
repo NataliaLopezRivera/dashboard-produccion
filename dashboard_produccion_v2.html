@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard Producción – Abril 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d0f18;--bg2:#141720;--bg3:#1c2030;--bg4:#232840;
+  --accent:#4f8ef7;--green:#22c55e;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;
+  --text:#dde3f0;--text2:#7a8aaa;--border:#252b42;--radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
+/* ── HEADER ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+header h1{font-size:16px;font-weight:600;letter-spacing:.3px}
+header span{color:var(--text2);font-size:11px}
+/* ── LAYOUT ── */
+.main{display:flex;gap:0;min-height:calc(100vh - 48px)}
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto}
+.content{flex:1;padding:20px 24px;overflow-x:hidden}
+/* ── FILTROS ── */
+.filter-section{display:flex;flex-direction:column;gap:6px}
+.filter-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+select{width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8aaa'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+select:focus{outline:none;border-color:var(--accent)}
+select:disabled{opacity:.35;cursor:not-allowed}
+.divider{border:none;border-top:1px solid var(--border);margin:4px 0}
+.btn-reset{background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:5px;padding:6px 10px;cursor:pointer;font-size:11px;width:100%;transition:all .2s;text-align:center}
+.btn-reset:hover{color:var(--text);border-color:var(--accent)}
+/* ── PLANTA FILTER (top-right) ── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.top-bar h2{font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.planta-filter{display:flex;align-items:center;gap:8px}
+.planta-filter label{font-size:11px;color:var(--text2);white-space:nowrap}
+.planta-filter select{width:160px}
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{padding:8px 18px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .2s;font-weight:500}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text)}
+/* ── KPIs ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.kpi-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.kpi-value{font-size:22px;font-weight:700;line-height:1}
+.kpi-sub{font-size:10px;color:var(--text2);margin-top:3px}
+/* ── CHARTS ── */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.4px}
+.chart-wrap{position:relative;height:220px}
+/* ── TABLES ── */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.table-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px}
+.table-wrap{overflow-x:auto;max-height:380px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg3);color:var(--text2);font-weight:600;padding:8px 10px;text-align:left;position:sticky;top:0;z-index:1;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600}
+.b-red{background:rgba(239,68,68,.15);color:var(--red)}
+.b-orange{background:rgba(249,115,22,.15);color:var(--orange)}
+.b-yellow{background:rgba(245,158,11,.15);color:var(--yellow)}
+.b-green{background:rgba(34,197,94,.15);color:var(--green)}
+/* ── PROGRESS BAR ── */
+.pbar{background:var(--bg4);border-radius:3px;height:5px;width:80px;display:inline-block;vertical-align:middle;margin-right:6px}
+.pfill{height:5px;border-radius:3px}
+/* ── EMPTY STATE ── */
+.empty{color:var(--text2);text-align:center;padding:32px;font-size:12px}
+/* ── SECTION TITLE ── */
+.section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+@media(max-width:900px){
+  .charts{grid-template-columns:1fr}
+  .chart-card.full{grid-column:1}
+  .sidebar{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 Dashboard Programación de Producción · Abril 2026</h1>
+  <span id="header-sub">Selecciona una semana para comenzar</span>
+</header>
+<div class="main">
+  <!-- SIDEBAR FILTROS -->
+  <aside class="sidebar">
+    <div class="filter-section">
+      <div class="filter-label">Semana</div>
+      <select id="sel-semana" onchange="onSemanaChange()">
+        <option value="">— Selecciona semana —</option>
+      </select>
+    </div>
+    <hr class="divider">
+    <div class="filter-section">
+      <div class="filter-label">Línea</div>
+      <select id="sel-linea" onchange="onLineaChange()" disabled>
+        <option value="">Todas las líneas</option>
+      </select>
+    </div>
+    <div class="filter-section">
+      <div class="filter-label">Proceso</div>
+      <select id="sel-proceso" onchange="applyFilters()" disabled>
+        <option value="">Todos los procesos</option>
+      </select>
+    </div>
+    <hr class="divider">
+    <button class="btn-reset" onclick="resetDependentFilters()">↺ Limpiar filtros</button>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <h2 id="semana-title">Selecciona una semana</h2>
+      <div class="planta-filter">
+        <label>Planta:</label>
+        <select id="sel-planta" onchange="applyFilters()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('formacion',this)">🔧 Formación</div>
+      <div class="tab" onclick="switchTab('embolsado',this)">📦 Embolsado</div>
+    </div>
+
+    <!-- ═══ TAB FORMACIÓN ═══ -->
+    <div id="tab-formacion">
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">Prog. Formación</div><div class="kpi-value" id="kf-prog">—</div><div class="kpi-sub">toneladas</div></div>
+        <div class="kpi"><div class="kpi-label">Notificado</div><div class="kpi-value" id="kf-notif" style="color:var(--green)">—</div><div class="kpi-sub">toneladas</div></div>
+        <div class="kpi"><div class="kpi-label">Pendiente</div><div class="kpi-value" id="kf-pend" style="color:var(--orange)">—</div><div class="kpi-sub">toneladas</div></div>
+        <div class="kpi"><div class="kpi-label">Avance</div><div class="kpi-value" id="kf-avance">—</div><div class="kpi-sub">% vs programado</div></div>
+        <div class="kpi"><div class="kpi-label">Líneas activas</div><div class="kpi-value" id="kf-lineas" style="color:var(--accent)">—</div><div class="kpi-sub">con programación</div></div>
+      </div>
+      <!-- CHARTS -->
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-title">Avance por Línea (%)</div>
+          <div class="chart-wrap"><canvas id="ch-form-avance"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Prog. vs Notificado (t)</div>
+          <div class="chart-wrap"><canvas id="ch-form-pn"></canvas></div>
+        </div>
+      </div>
+      <!-- TABLA FORMACIÓN -->
+      <div class="table-card">
+        <div class="table-title">📋 Detalle Formación por Línea</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Planta</th><th>Línea</th>
+              <th>Prog. (t)</th><th>Notif. (t)</th><th>Pend. (t)</th>
+              <th>Avance</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="tbody-form"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- TOP 5 CRÍTICAS -->
+      <div class="table-card">
+        <div class="table-title">🚨 Top 5 Líneas Críticas – Formación</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Planta</th><th>Línea</th>
+              <th>Avance</th><th>Pend. (t)</th><th>Score Criticidad</th>
+            </tr></thead>
+            <tbody id="tbody-criticas"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB EMBOLSADO ═══ -->
+    <div id="tab-embolsado" style="display:none">
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">Prog. Embolsado</div><div class="kpi-value" id="ke-prog">—</div><div class="kpi-sub">pacas / unidades</div></div>
+        <div class="kpi"><div class="kpi-label">Notificado</div><div class="kpi-value" id="ke-notif" style="color:var(--green)">—</div><div class="kpi-sub">pacas / unidades</div></div>
+        <div class="kpi"><div class="kpi-label">Pendiente</div><div class="kpi-value" id="ke-pend" style="color:var(--orange)">—</div><div class="kpi-sub">pacas / unidades</div></div>
+        <div class="kpi"><div class="kpi-label">Avance</div><div class="kpi-value" id="ke-avance">—</div><div class="kpi-sub">% vs programado</div></div>
+        <div class="kpi"><div class="kpi-label">Líneas activas</div><div class="kpi-value" id="ke-lineas" style="color:var(--accent)">—</div><div class="kpi-sub">con programación</div></div>
+      </div>
+      <!-- CHARTS -->
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-title">Avance Embolsado por Línea (%)</div>
+          <div class="chart-wrap"><canvas id="ch-emb-avance"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Prog. vs Notificado (PAC)</div>
+          <div class="chart-wrap"><canvas id="ch-emb-pn"></canvas></div>
+        </div>
+      </div>
+      <!-- TABLA EMBOLSADO -->
+      <div class="table-card">
+        <div class="table-title">📋 Detalle Embolsado por Línea</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Planta</th><th>Línea</th>
+              <th>Prog. (PAC)</th><th>Notif. (PAC)</th><th>Pend. (PAC)</th>
+              <th>Avance</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="tbody-emb"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ÓRDENES PENDIENTES -->
+      <div class="table-card">
+        <div class="table-title">📅 Órdenes de Embolsado con Pendientes de Entrega</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Planta</th><th>Línea</th><th>Proceso</th><th>Orden</th>
+              <th>Semielaborado</th><th>Prog.</th><th>Notif.</th><th>Pend.</th>
+              <th>UN</th><th>Fecha Cierre</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="tbody-ordenes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB = {"meta": {"semanas": [13, 14, 15, 16, 17], "semana_labels": {"13": "S13: 31 mar – 6 abr", "14": "S14: 7 – 13 abr", "15": "S15: 14 – 20 abr", "16": "S16: 21 – 27 abr", "17": "S17: 28 abr – 4 may"}, "plantas": ["Embolsado", "PMPS", "Planta 1", "Planta 2", "Planta 3", "Planta Fabry"], "lineas": ["Barras 1", "Barras 2", "Barras 2 Lokiño", "Barras Masticables 3", "Caramelos Duros 1", "Chicle cubo", "Chicle polvo", "Chupeta Revolcón", "Chupetas 1", "Chupetas 2", "Coberturas", "Comprimidos", "Cuarto Grageado 1-2", "Cuarto Grageado 3", "Diti 1", "Diti 2", "Envoltura Doble Twist", "Envoltura Pillowpack", "Gomas", "Granulación", "Gusanos", "Líquidos", "Masticables Frutales 1", "Minigrageas (Ovnis)", "Mogul 4", "Pitilladora", "Piñatas", "Polvos", "Termoencogido", "Turrones 1", "Uniplast 1", "Uniplast 2", "Uniplast 3", "Uniplast 4", "Uniplast 5", "Uniplast 6", "Uniplast 7"]}, "data": {"13": {"formacion": [{"PLANTA": "Planta 3", "LÍNEA": "Uniplast 4", "prog_kg": 0.0, "notif_kg": 15540.005, "pend_kg": -15540.005, "prog_t": 0.0, "notif_t": 15.54, "pend_t": 0.0, "avance_pct": 0.0, "criticidad": -15540.0}], "embolsado": [{"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "prog_pac": 2320.0, "notif_pac": 1931.0, "pend_pac": 389.0, "avance_pct": 0.8323}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "prog_pac": 908.0, "notif_pac": 825.0, "pend_pac": 83.0, "avance_pct": 0.9086}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "prog_pac": 3450.0, "notif_pac": 2443.0, "pend_pac": 1007.0, "avance_pct": 0.7081}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "prog_pac": 4259.0, "notif_pac": 3379.0, "pend_pac": 880.0, "avance_pct": 0.7934}], "ordenes_emb": [{"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186391, "SEMIELABORADO": "BARRILETE (8G) 18B 50U G2 V2", "prog": 600.0, "notif": 211.0, "pend": 389.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186439, "SEMIELABORADO": "MENTA HELADA FRUTAL (3.8g) 24B 100U C1", "prog": 908.0, "notif": 825.0, "pend": 83.0, "UN": "PAC", "FECHA_CIERRE_STR": "02/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186188, "SEMIELABORADO": "CHAO SANDIA (3.5G) 24B 100U C1", "prog": 2000.0, "notif": 1261.0, "pend": 739.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186189, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 1000.0, "notif": 788.0, "pend": 212.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186191, "SEMIELABORADO": "CHAO MENTA (3.5g) 24B 50U C1", "prog": 450.0, "notif": 394.0, "pend": 56.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186404, "SEMIELABORADO": "BIANCHI CHOCOLATE (4G) 24B 40U C1", "prog": 1800.0, "notif": 1785.0, "pend": 15.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186405, "SEMIELABORADO": "BIANCHI BLANCO (4G) 24B 40U C1", "prog": 2200.0, "notif": 1335.0, "pend": 865.0, "UN": "PAC", "FECHA_CIERRE_STR": "31/03/2026", "ESTADO": "Cerrada"}]}, "14": {"formacion": [], "embolsado": [{"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "prog_pac": 1325.0, "notif_pac": 1324.0, "pend_pac": 1.0, "avance_pct": 0.9992}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "prog_pac": 1600.0, "notif_pac": 700.0, "pend_pac": 900.0, "avance_pct": 0.4375}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "prog_pac": 259.0, "notif_pac": 0.0, "pend_pac": 259.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "prog_pac": 1770.0, "notif_pac": 929.0, "pend_pac": 841.0, "avance_pct": 0.5249}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "prog_pac": 1540.0, "notif_pac": 481.0, "pend_pac": 1059.0, "avance_pct": 0.3123}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "prog_pac": 2000.0, "notif_pac": 0.0, "pend_pac": 2000.0, "avance_pct": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_pac": 3728.0, "notif_pac": 3808.0, "pend_pac": 0.0, "avance_pct": 1.0}], "ordenes_emb": [{"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186495, "SEMIELABORADO": "CHAO FRESA 3.5G 24B 100U C6 PLLW", "prog": 1325.0, "notif": 1324.0, "pend": 1.0, "UN": "PAC", "FECHA_CIERRE_STR": "07/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186262, "SEMIELABORADO": "TRULULU FEROZ (18G) 6D 50U C1", "prog": 700.0, "notif": 0.0, "pend": 700.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186059, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U G2", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186198, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U G2 V2", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186125, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U C1", "prog": 59.0, "notif": 0.0, "pend": 59.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000087, "SEMIELABORADO": "PIÑATA SURTIDA 2B 4K C6", "prog": 170.0, "notif": 0.0, "pend": 170.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000085, "SEMIELABORADO": "PIÑATA SURTIDA 3B 2.27K NUEVO MIX C6", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000086, "SEMIELABORADO": "PIÑATA SURTIDA 6B 1K NUEVO MIX C6", "prog": 1000.0, "notif": 929.0, "pend": 71.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186149, "SEMIELABORADO": "OKA LOKA NANOS (40g) 12BA 12U C1", "prog": 800.0, "notif": 281.0, "pend": 519.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186137, "SEMIELABORADO": "OKA LOKA NANOS (40g) 12BA 12U g2", "prog": 540.0, "notif": 0.0, "pend": 540.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Cerrada"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186283, "SEMIELABORADO": "YOGGER MAST RELLENO 4GR 18B X 100U C1", "prog": 2000.0, "notif": 0.0, "pend": 2000.0, "UN": "PAC", "FECHA_CIERRE_STR": "06/04/2026", "ESTADO": "Cerrada"}]}, "15": {"formacion": [{"PLANTA": "PMPS", "LÍNEA": "Coberturas", "prog_kg": 3720.0, "notif_kg": 4000.0, "pend_kg": -280.0, "prog_t": 3.72, "notif_t": 4.0, "pend_t": 0.0, "avance_pct": 1.0, "criticidad": 0.0}, {"PLANTA": "PMPS", "LÍNEA": "Polvos", "prog_kg": 344.0, "notif_kg": 250.0, "pend_kg": 94.0, "prog_t": 0.344, "notif_t": 0.25, "pend_t": 0.094, "avance_pct": 0.7267, "criticidad": 25.69}, {"PLANTA": "Planta 1", "LÍNEA": "Barras 1", "prog_kg": 77936.1, "notif_kg": 56804.0, "pend_kg": 21132.1, "prog_t": 77.936, "notif_t": 56.804, "pend_t": 21.132, "avance_pct": 0.7289, "criticidad": 5728.91}, {"PLANTA": "Planta 1", "LÍNEA": "Barras 2", "prog_kg": 138.383, "notif_kg": 4372.0, "pend_kg": -4233.617, "prog_t": 0.138, "notif_t": 4.372, "pend_t": 0.0, "avance_pct": 1.0, "criticidad": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Barras 2 Lokiño", "prog_kg": 11500.0, "notif_kg": 6710.0, "pend_kg": 4790.0, "prog_t": 11.5, "notif_t": 6.71, "pend_t": 4.79, "avance_pct": 0.5835, "criticidad": 1995.04}, {"PLANTA": "Planta 1", "LÍNEA": "Chicle cubo", "prog_kg": 3650.0, "notif_kg": 3855.0, "pend_kg": -205.0, "prog_t": 3.65, "notif_t": 3.855, "pend_t": 0.0, "avance_pct": 1.0, "criticidad": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Chicle polvo", "prog_kg": 7652.0, "notif_kg": 4535.001, "pend_kg": 3116.999, "prog_t": 7.652, "notif_t": 4.535, "pend_t": 3.117, "avance_pct": 0.5927, "criticidad": 1269.55}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_kg": 31922.0, "notif_kg": 24842.001, "pend_kg": 7079.999, "prog_t": 31.922, "notif_t": 24.842, "pend_t": 7.08, "avance_pct": 0.7782, "criticidad": 1570.34}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "prog_kg": 100858.4, "notif_kg": 94851.017, "pend_kg": 6007.383, "prog_t": 100.858, "notif_t": 94.851, "pend_t": 6.007, "avance_pct": 0.9404, "criticidad": 358.04}, {"PLANTA": "Planta 1", "LÍNEA": "Uniplast 3", "prog_kg": 41349.0, "notif_kg": 25575.0, "pend_kg": 15774.0, "prog_t": 41.349, "notif_t": 25.575, "pend_t": 15.774, "avance_pct": 0.6185, "criticidad": 6017.78}, {"PLANTA": "Planta 2", "LÍNEA": "Barras Masticables 3", "prog_kg": 8874.0, "notif_kg": 7826.0, "pend_kg": 1048.0, "prog_t": 8.874, "notif_t": 7.826, "pend_t": 1.048, "avance_pct": 0.8819, "criticidad": 123.77}, {"PLANTA": "Planta 2", "LÍNEA": "Caramelos Duros 1", "prog_kg": 22510.0, "notif_kg": 18561.001, "pend_kg": 3948.999, "prog_t": 22.51, "notif_t": 18.561, "pend_t": 3.949, "avance_pct": 0.8246, "criticidad": 692.65}, {"PLANTA": "Planta 2", "LÍNEA": "Chupetas 1", "prog_kg": 13202.0, "notif_kg": 13439.0, "pend_kg": -237.0, "prog_t": 13.202, "notif_t": 13.439, "pend_t": 0.0, "avance_pct": 1.0, "criticidad": 0.0}, {"PLANTA": "Planta 2", "LÍNEA": "Masticables Frutales 1", "prog_kg": 51888.0, "notif_kg": 44581.0, "pend_kg": 7307.0, "prog_t": 51.888, "notif_t": 44.581, "pend_t": 7.307, "avance_pct": 0.8592, "criticidad": 1028.83}, {"PLANTA": "Planta 2", "LÍNEA": "Turrones 1", "prog_kg": 28446.0, "notif_kg": 24590.0, "pend_kg": 3856.0, "prog_t": 28.446, "notif_t": 24.59, "pend_t": 3.856, "avance_pct": 0.8644, "criticidad": 522.87}, {"PLANTA": "Planta 3", "LÍNEA": "Chupetas 2", "prog_kg": 30906.808, "notif_kg": 5531.409, "pend_kg": 25375.399, "prog_t": 30.907, "notif_t": 5.531, "pend_t": 25.375, "avance_pct": 0.179, "criticidad": 20833.2}, {"PLANTA": "Planta 3", "LÍNEA": "Diti 1", "prog_kg": 58487.57, "notif_kg": 53016.005, "pend_kg": 5471.565, "prog_t": 58.488, "notif_t": 53.016, "pend_t": 5.472, "avance_pct": 0.9064, "criticidad": 512.14}, {"PLANTA": "Planta 3", "LÍNEA": "Diti 2", "prog_kg": 122154.0, "notif_kg": 88744.003, "pend_kg": 33409.997, "prog_t": 122.154, "notif_t": 88.744, "pend_t": 33.41, "avance_pct": 0.7265, "criticidad": 9137.63}, {"PLANTA": "Planta 3", "LÍNEA": "Granulación", "prog_kg": 31922.0, "notif_kg": 22188.006, "pend_kg": 9733.994, "prog_t": 31.922, "notif_t": 22.188, "pend_t": 9.734, "avance_pct": 0.6951, "criticidad": 2967.89}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 1", "prog_kg": 98226.0, "notif_kg": 74193.004, "pend_kg": 24032.996, "prog_t": 98.226, "notif_t": 74.193, "pend_t": 24.033, "avance_pct": 0.7553, "criticidad": 5880.87}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 2", "prog_kg": 8064.0, "notif_kg": 1516.0, "pend_kg": 6548.0, "prog_t": 8.064, "notif_t": 1.516, "pend_t": 6.548, "avance_pct": 0.188, "criticidad": 5316.98}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 4", "prog_kg": 56629.0, "notif_kg": 31826.008, "pend_kg": 24802.992, "prog_t": 56.629, "notif_t": 31.826, "pend_t": 24.803, "avance_pct": 0.562, "criticidad": 10863.71}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 7", "prog_kg": 13222.0, "notif_kg": 4560.005, "pend_kg": 8661.995, "prog_t": 13.222, "notif_t": 4.56, "pend_t": 8.662, "avance_pct": 0.3449, "criticidad": 5674.47}, {"PLANTA": "Planta Fabry", "LÍNEA": "Minigrageas (Ovnis)", "prog_kg": 5055.0, "notif_kg": 1500.0, "pend_kg": 3555.0, "prog_t": 5.055, "notif_t": 1.5, "pend_t": 3.555, "avance_pct": 0.2967, "criticidad": 2500.23}, {"PLANTA": "Planta Fabry", "LÍNEA": "Uniplast 6", "prog_kg": 76568.5368, "notif_kg": 55148.004, "pend_kg": 21420.5328, "prog_t": 76.569, "notif_t": 55.148, "pend_t": 21.421, "avance_pct": 0.7202, "criticidad": 5993.47}], "embolsado": [{"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "prog_pac": 13206.0, "notif_pac": 11837.0, "pend_pac": 1369.0, "avance_pct": 0.8963}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 2", "prog_pac": 655.0, "notif_pac": 638.0, "pend_pac": 17.0, "avance_pct": 0.974}, {"PLANTA": "Embolsado", "LÍNEA": "Barras Masticables 3", "prog_pac": 2042.0, "notif_pac": 1742.0, "pend_pac": 300.0, "avance_pct": 0.8531}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "prog_pac": 2135.0, "notif_pac": 1371.0, "pend_pac": 764.0, "avance_pct": 0.6422}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "prog_pac": 3616.0, "notif_pac": 1823.0, "pend_pac": 1793.0, "avance_pct": 0.5041}, {"PLANTA": "Embolsado", "LÍNEA": "Chupeta Revolcón", "prog_pac": 598.0, "notif_pac": 0.0, "pend_pac": 598.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "prog_pac": 1496.0, "notif_pac": 585.0, "pend_pac": 911.0, "avance_pct": 0.391}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "prog_pac": 2450.0, "notif_pac": 504.0, "pend_pac": 1946.0, "avance_pct": 0.2057}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "prog_pac": 1954.0, "notif_pac": 1311.0, "pend_pac": 643.0, "avance_pct": 0.6709}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "prog_pac": 12132.0, "notif_pac": 8552.0, "pend_pac": 3580.0, "avance_pct": 0.7049}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "prog_pac": 462.0, "notif_pac": 254.0, "pend_pac": 208.0, "avance_pct": 0.5498}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "prog_pac": 300.0, "notif_pac": 0.0, "pend_pac": 300.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "prog_pac": 6375.0, "notif_pac": 5347.0, "pend_pac": 1028.0, "avance_pct": 0.8387}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "prog_pac": 8450.0, "notif_pac": 5118.0, "pend_pac": 3332.0, "avance_pct": 0.6057}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 2", "prog_pac": 2000.0, "notif_pac": 0.0, "pend_pac": 2000.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "prog_pac": 359.0, "notif_pac": 358.0, "pend_pac": 1.0, "avance_pct": 0.9972}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "prog_pac": 7150.0, "notif_pac": 4117.0, "pend_pac": 3033.0, "avance_pct": 0.5758}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 7", "prog_pac": 1074.0, "notif_pac": 928.0, "pend_pac": 146.0, "avance_pct": 0.8641}, {"PLANTA": "PMPS", "LÍNEA": "Coberturas", "prog_pac": 465.0, "notif_pac": 0.0, "pend_pac": 465.0, "avance_pct": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_pac": 4880.0, "notif_pac": 653.0, "pend_pac": 4227.0, "avance_pct": 0.1338}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "prog_pac": 215000.0, "notif_pac": 215000.0, "pend_pac": 0.0, "avance_pct": 1.0}], "ordenes_emb": [{"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "PROCESO": "2 Embolsado", "ORDEN": 5186454, "SEMIELABORADO": "CHAO PASTILLA CER (20.4g)12BA 16T  C1 V2", "prog": 4656.0, "notif": 429.0, "pend": 4227.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "PMPS", "LÍNEA": "Coberturas", "PROCESO": "2 Embolsado", "ORDEN": 5186419, "SEMIELABORADO": "BIANCHI COBERTURA CHOCOLATE (1LB) 16B C1", "prog": 465.0, "notif": 0.0, "pend": 465.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186347, "SEMIELABORADO": "BARRILETE (8G) 18B 50U CL V2", "prog": 550.0, "notif": 0.0, "pend": 550.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186382, "SEMIELABORADO": "BARRILETE (8G) 18B 50U CL V2", "prog": 188.0, "notif": 0.0, "pend": 188.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186383, "SEMIELABORADO": "BARRILETE (8G) 18B 50U CL V2", "prog": 362.0, "notif": 0.0, "pend": 362.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186559, "SEMIELABORADO": "BARRILETE (8G) 30B 15U CAD C1 V2", "prog": 3050.0, "notif": 2781.0, "pend": 269.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 2", "PROCESO": "Embolsado", "ORDEN": 5186651, "SEMIELABORADO": "BARRILETE REVOLCÓN (11g) 18B 40U C1", "prog": 17.0, "notif": 0.0, "pend": 17.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras Masticables 3", "PROCESO": "Embolsado", "ORDEN": 5186425, "SEMIELABORADO": "SUPERCOCO TIRUDITO FRIO (8G) 18B 40U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186412, "SEMIELABORADO": "MENTA HELADA (3.8G) 24B 100U C1", "prog": 1835.0, "notif": 1271.0, "pend": 564.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186355, "SEMIELABORADO": "MENTA HELADA (3.8G) 24B 100U C1", "prog": 100.0, "notif": 0.0, "pend": 100.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186366, "SEMIELABORADO": "MENTA HELADA (3.8G) 24B 100U C1", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186620, "SEMIELABORADO": "MENTA HELADA (3.8G) 24B 100U ES", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186385, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 18D 12U MX", "prog": 800.0, "notif": 428.0, "pend": 372.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186387, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 18D 12U MX", "prog": 219.0, "notif": 0.0, "pend": 219.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186386, "SEMIELABORADO": "OKA LOKA CHICLE POLVO2.0(12g) 18D 12U MX", "prog": 505.0, "notif": 0.0, "pend": 505.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186388, "SEMIELABORADO": "OKA LOKA CHICLE POLVO2.0(12g) 18D 12U MX", "prog": 98.0, "notif": 0.0, "pend": 98.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186398, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 12D 12U G2", "prog": 299.0, "notif": 0.0, "pend": 299.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186470, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 12D 12U C6", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupeta Revolcón", "PROCESO": "Embolsado", "ORDEN": 5186486, "SEMIELABORADO": "REVOLCON CHUPETA (21G) 6D 12U C1", "prog": 598.0, "notif": 0.0, "pend": 598.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186617, "SEMIELABORADO": "SUPERCOCO CHUPETA (15G) 24B 24U ES V2", "prog": 792.0, "notif": 431.0, "pend": 361.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186618, "SEMIELABORADO": "SUPERCOCO CHUPETA (15G) 24B 24U ES V2", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186420, "SEMIELABORADO": "SUPERCOCO CHUPETA (15G) 6P 48U C1", "prog": 250.0, "notif": 0.0, "pend": 250.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186622, "SEMIELABORADO": "SUPERCOCO CHUPETA (15G) 24B 24U US", "prog": 100.0, "notif": 0.0, "pend": 100.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186351, "SEMIELABORADO": "LOKIÑO CHUPETA SURTIDA (19G) 15B 24U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186601, "SEMIELABORADO": "ULA ULA CHUPETA SURT (13G) 15B 48U C1", "prog": 1500.0, "notif": 0.0, "pend": 1500.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186428, "SEMIELABORADO": "BARRILETE CHUPETA (19G) 15B 24U C1", "prog": 600.0, "notif": 504.0, "pend": 96.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186352, "SEMIELABORADO": "LOKIÑO CHUPETA SURTIDA (24G) 8B 48U C1", "prog": 150.0, "notif": 0.0, "pend": 150.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186621, "SEMIELABORADO": "RICATO CARAMELO (7.5g) 8B 1Kg US", "prog": 680.0, "notif": 37.0, "pend": 643.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186645, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U G2", "prog": 800.0, "notif": 799.0, "pend": 1.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186572, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 5350.0, "notif": 3828.0, "pend": 1522.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186389, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 367.0, "notif": 0.0, "pend": 367.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186384, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 130.0, "notif": 0.0, "pend": 130.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186348, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 260.0, "notif": 0.0, "pend": 260.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186354, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186364, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 3.0, "notif": 0.0, "pend": 3.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186365, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 47.0, "notif": 0.0, "pend": 47.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186616, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 650.0, "notif": 0.0, "pend": 650.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186379, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 112.0, "notif": 0.0, "pend": 112.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186362, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 328.0, "notif": 252.0, "pend": 76.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186373, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 20.0, "notif": 0.0, "pend": 20.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186624, "SEMIELABORADO": "OKA LOKA NANOS (12G) 12B 24U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186619, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 50U ES", "prog": 250.0, "notif": 173.0, "pend": 77.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186417, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 70G CAD C1", "prog": 4500.0, "notif": 3549.0, "pend": 951.0, "UN": null, "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "PROCESO": "Embolsado", "ORDEN": 5186502, "SEMIELABORADO": "BIANCHI BLANCO (6g) 18B 110U C7", "prog": 4650.0, "notif": 4485.0, "pend": 165.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "PROCESO": "Embolsado", "ORDEN": 5186501, "SEMIELABORADO": "BIANCHI LECHE (6g) 18B 110U C7", "prog": 1800.0, "notif": 400.0, "pend": 1400.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "PROCESO": "Embolsado", "ORDEN": 5186499, "SEMIELABORADO": "BIANCHI CHOCOLATE (6g) 18B 100U C1", "prog": 2000.0, "notif": 233.0, "pend": 1767.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 2", "PROCESO": "Embolsado", "ORDEN": 5186498, "SEMIELABORADO": "BIANCHI LINEA SURT (14G) 12D 24U C1", "prog": 2000.0, "notif": 0.0, "pend": 2000.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186357, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 300.0, "notif": 299.0, "pend": 1.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186444, "SEMIELABORADO": "YOGGER MAST RELLENO 4GR 18B X 100U C1", "prog": 4150.0, "notif": 1615.0, "pend": 2535.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186605, "SEMIELABORADO": "BIG BEN BLANCO (4g) 18B 100U PE", "prog": 2300.0, "notif": 2038.0, "pend": 262.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186631, "SEMIELABORADO": "BIANCHI BLANCO (4G) 18B 100U C1 V2", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186633, "SEMIELABORADO": "BIANCHI BLANCO (4G) 18B 100U C1 V2", "prog": 200.0, "notif": 164.0, "pend": 36.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 7", "PROCESO": "Embolsado", "ORDEN": 5186361, "SEMIELABORADO": "CHAO XTREME MORA AZUL (3.5g) 24B 100U C1", "prog": 500.0, "notif": 374.0, "pend": 126.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 7", "PROCESO": "Embolsado", "ORDEN": 5186372, "SEMIELABORADO": "CHAO XTREME MORA AZUL (3.5g) 24B 100U C1", "prog": 20.0, "notif": 0.0, "pend": 20.0, "UN": "PAC", "FECHA_CIERRE_STR": "13/04/2026", "ESTADO": "Abierta"}]}, "16": {"formacion": [{"PLANTA": "PMPS", "LÍNEA": "Chupetas 1", "prog_kg": 3568.0, "notif_kg": 0.0, "pend_kg": 3568.0, "prog_t": 3.568, "notif_t": 0.0, "pend_t": 3.568, "avance_pct": 0.0, "criticidad": 3568.0}, {"PLANTA": "PMPS", "LÍNEA": "Coberturas", "prog_kg": 3656.0, "notif_kg": 0.0, "pend_kg": 3656.0, "prog_t": 3.656, "notif_t": 0.0, "pend_t": 3.656, "avance_pct": 0.0, "criticidad": 3656.0}, {"PLANTA": "PMPS", "LÍNEA": "Polvos", "prog_kg": 1583.0, "notif_kg": 0.0, "pend_kg": 1583.0, "prog_t": 1.583, "notif_t": 0.0, "pend_t": 1.583, "avance_pct": 0.0, "criticidad": 1583.0}, {"PLANTA": "Planta 1", "LÍNEA": "Barras 1", "prog_kg": 84214.0, "notif_kg": 0.0, "pend_kg": 84214.0, "prog_t": 84.214, "notif_t": 0.0, "pend_t": 84.214, "avance_pct": 0.0, "criticidad": 84214.0}, {"PLANTA": "Planta 1", "LÍNEA": "Chicle cubo", "prog_kg": 3010.0, "notif_kg": 0.0, "pend_kg": 3010.0, "prog_t": 3.01, "notif_t": 0.0, "pend_t": 3.01, "avance_pct": 0.0, "criticidad": 3010.0}, {"PLANTA": "Planta 1", "LÍNEA": "Chicle polvo", "prog_kg": 6104.0, "notif_kg": 0.0, "pend_kg": 6104.0, "prog_t": 6.104, "notif_t": 0.0, "pend_t": 6.104, "avance_pct": 0.0, "criticidad": 6104.0}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_kg": 23947.0, "notif_kg": 0.0, "pend_kg": 23947.0, "prog_t": 23.947, "notif_t": 0.0, "pend_t": 23.947, "avance_pct": 0.0, "criticidad": 23947.0}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "prog_kg": 64735.7, "notif_kg": 0.0, "pend_kg": 64735.7, "prog_t": 64.736, "notif_t": 0.0, "pend_t": 64.736, "avance_pct": 0.0, "criticidad": 64735.7}, {"PLANTA": "Planta 1", "LÍNEA": "Uniplast 3", "prog_kg": 33852.0, "notif_kg": 0.0, "pend_kg": 33852.0, "prog_t": 33.852, "notif_t": 0.0, "pend_t": 33.852, "avance_pct": 0.0, "criticidad": 33852.0}, {"PLANTA": "Planta 2", "LÍNEA": "Caramelos Duros 1", "prog_kg": 11273.0, "notif_kg": 0.0, "pend_kg": 11273.0, "prog_t": 11.273, "notif_t": 0.0, "pend_t": 11.273, "avance_pct": 0.0, "criticidad": 11273.0}, {"PLANTA": "Planta 2", "LÍNEA": "Chupetas 1", "prog_kg": 3568.0, "notif_kg": 0.0, "pend_kg": 3568.0, "prog_t": 3.568, "notif_t": 0.0, "pend_t": 3.568, "avance_pct": 0.0, "criticidad": 3568.0}, {"PLANTA": "Planta 2", "LÍNEA": "Líquidos", "prog_kg": 1280.0, "notif_kg": 0.0, "pend_kg": 1280.0, "prog_t": 1.28, "notif_t": 0.0, "pend_t": 1.28, "avance_pct": 0.0, "criticidad": 1280.0}, {"PLANTA": "Planta 2", "LÍNEA": "Masticables Frutales 1", "prog_kg": 43503.0, "notif_kg": 0.0, "pend_kg": 43503.0, "prog_t": 43.503, "notif_t": 0.0, "pend_t": 43.503, "avance_pct": 0.0, "criticidad": 43503.0}, {"PLANTA": "Planta 2", "LÍNEA": "Turrones 1", "prog_kg": 20890.0, "notif_kg": 0.0, "pend_kg": 20890.0, "prog_t": 20.89, "notif_t": 0.0, "pend_t": 20.89, "avance_pct": 0.0, "criticidad": 20890.0}, {"PLANTA": "Planta 3", "LÍNEA": "Chupetas 2", "prog_kg": 26268.0, "notif_kg": 0.0, "pend_kg": 26268.0, "prog_t": 26.268, "notif_t": 0.0, "pend_t": 26.268, "avance_pct": 0.0, "criticidad": 26268.0}, {"PLANTA": "Planta 3", "LÍNEA": "Diti 1", "prog_kg": 47298.0, "notif_kg": 0.0, "pend_kg": 47298.0, "prog_t": 47.298, "notif_t": 0.0, "pend_t": 47.298, "avance_pct": 0.0, "criticidad": 47298.0}, {"PLANTA": "Planta 3", "LÍNEA": "Diti 2", "prog_kg": 28090.0, "notif_kg": 0.0, "pend_kg": 28090.0, "prog_t": 28.09, "notif_t": 0.0, "pend_t": 28.09, "avance_pct": 0.0, "criticidad": 28090.0}, {"PLANTA": "Planta 3", "LÍNEA": "Granulación", "prog_kg": 23947.0, "notif_kg": 0.0, "pend_kg": 23947.0, "prog_t": 23.947, "notif_t": 0.0, "pend_t": 23.947, "avance_pct": 0.0, "criticidad": 23947.0}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 1", "prog_kg": 62370.0, "notif_kg": 0.0, "pend_kg": 62370.0, "prog_t": 62.37, "notif_t": 0.0, "pend_t": 62.37, "avance_pct": 0.0, "criticidad": 62370.0}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 4", "prog_kg": 50910.0, "notif_kg": 0.0, "pend_kg": 50910.0, "prog_t": 50.91, "notif_t": 0.0, "pend_t": 50.91, "avance_pct": 0.0, "criticidad": 50910.0}, {"PLANTA": "Planta 3", "LÍNEA": "Uniplast 7", "prog_kg": 19724.0, "notif_kg": 0.0, "pend_kg": 19724.0, "prog_t": 19.724, "notif_t": 0.0, "pend_t": 19.724, "avance_pct": 0.0, "criticidad": 19724.0}, {"PLANTA": "Planta Fabry", "LÍNEA": "Minigrageas (Ovnis)", "prog_kg": 6365.0, "notif_kg": 0.0, "pend_kg": 6365.0, "prog_t": 6.365, "notif_t": 0.0, "pend_t": 6.365, "avance_pct": 0.0, "criticidad": 6365.0}, {"PLANTA": "Planta Fabry", "LÍNEA": "Uniplast 5", "prog_kg": 112527.0, "notif_kg": 0.0, "pend_kg": 112527.0, "prog_t": 112.527, "notif_t": 0.0, "pend_t": 112.527, "avance_pct": 0.0, "criticidad": 112527.0}, {"PLANTA": "Planta Fabry", "LÍNEA": "Uniplast 6", "prog_kg": 838.0, "notif_kg": 0.0, "pend_kg": 838.0, "prog_t": 0.838, "notif_t": 0.0, "pend_t": 0.838, "avance_pct": 0.0, "criticidad": 838.0}], "embolsado": [{"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "prog_pac": 4128.0, "notif_pac": 431.0, "pend_pac": 3697.0, "avance_pct": 0.1044}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "prog_pac": 1236.0, "notif_pac": 0.0, "pend_pac": 1236.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle cubo", "prog_pac": 608.0, "notif_pac": 608.0, "pend_pac": 0.0, "avance_pct": 1.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "prog_pac": 2173.0, "notif_pac": 0.0, "pend_pac": 2173.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chupeta Revolcón", "prog_pac": 350.0, "notif_pac": 0.0, "pend_pac": 350.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "prog_pac": 635.0, "notif_pac": 0.0, "pend_pac": 635.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "prog_pac": 3750.0, "notif_pac": 0.0, "pend_pac": 3750.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "prog_pac": 14835.0, "notif_pac": 5022.0, "pend_pac": 9813.0, "avance_pct": 0.3385}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "prog_pac": 2000.0, "notif_pac": 0.0, "pend_pac": 2000.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "prog_pac": 10301.0, "notif_pac": 6090.0, "pend_pac": 4211.0, "avance_pct": 0.5912}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "prog_pac": 2877.0, "notif_pac": 1700.0, "pend_pac": 1177.0, "avance_pct": 0.5909}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "prog_pac": 5956.0, "notif_pac": 951.0, "pend_pac": 5005.0, "avance_pct": 0.1597}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "prog_pac": 7100.0, "notif_pac": 2212.0, "pend_pac": 4888.0, "avance_pct": 0.3115}, {"PLANTA": "Embolsado", "LÍNEA": "Líquidos", "prog_pac": 170.0, "notif_pac": 0.0, "pend_pac": 170.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "prog_pac": 8033.0, "notif_pac": 5284.0, "pend_pac": 2749.0, "avance_pct": 0.6578}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "prog_pac": 1630.0, "notif_pac": 0.0, "pend_pac": 1630.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Pitilladora", "prog_pac": 316.0, "notif_pac": 0.0, "pend_pac": 316.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "prog_pac": 6987.0, "notif_pac": 915.0, "pend_pac": 6072.0, "avance_pct": 0.131}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "prog_pac": 3046.0, "notif_pac": 789.0, "pend_pac": 2257.0, "avance_pct": 0.259}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "prog_pac": 5320.0, "notif_pac": 1805.0, "pend_pac": 3515.0, "avance_pct": 0.3393}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "prog_pac": 5250.0, "notif_pac": 0.0, "pend_pac": 5250.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "prog_pac": 14121.0, "notif_pac": 5856.0, "pend_pac": 8265.0, "avance_pct": 0.4147}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "prog_pac": 6700.0, "notif_pac": 0.0, "pend_pac": 6700.0, "avance_pct": 0.0}, {"PLANTA": "PMPS", "LÍNEA": "Coberturas", "prog_pac": 457.0, "notif_pac": 0.0, "pend_pac": 457.0, "avance_pct": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_pac": 2884.0, "notif_pac": 0.0, "pend_pac": 2884.0, "avance_pct": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "prog_pac": 151400.0, "notif_pac": 39480.0, "pend_pac": 111920.0, "avance_pct": 0.2608}], "ordenes_emb": [{"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "PROCESO": "2 Embolsado", "ORDEN": 5186842, "SEMIELABORADO": "CHAO PASTILLA CER(20.4g) 12BA 16T CAD C1", "prog": 2500.0, "notif": 0.0, "pend": 2500.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "PROCESO": "2 Embolsado", "ORDEN": 5186837, "SEMIELABORADO": "NEXT PASTILLA CER (20.4g) 12BA 16T g2 V2", "prog": 384.0, "notif": 0.0, "pend": 384.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "PROCESO": "4 Embolsado", "ORDEN": 5186435, "SEMIELABORADO": "TRULULU MINI FEROZ 24B 77G C5", "prog": 14400.0, "notif": 0.0, "pend": 14400.0, "UN": "UN", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "PROCESO": "4 Embolsado", "ORDEN": 5186326, "SEMIELABORADO": "TRULULU MINI FEROZ 24B 70G C1", "prog": 12000.0, "notif": 0.0, "pend": 12000.0, "UN": "UN", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "PROCESO": "4 Embolsado", "ORDEN": 2250025, "SEMIELABORADO": "N-BOLSA TRULULU MINI FEROZ 70G C1", "prog": 100000.0, "notif": 39480.0, "pend": 60520.0, "UN": "UN", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Planta 1", "LÍNEA": "Mogul 4", "PROCESO": "4 Embolsado", "ORDEN": 2250026, "SEMIELABORADO": "N-BOLSA TRULULU MINI FEROZ  77G C2", "prog": 25000.0, "notif": 0.0, "pend": 25000.0, "UN": "UN", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "PMPS", "LÍNEA": "Coberturas", "PROCESO": "2 Embolsado", "ORDEN": 5186812, "SEMIELABORADO": "BIANCHI COBERTURA BLANCA (1 LB) 16B C1", "prog": 457.0, "notif": 0.0, "pend": 457.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186733, "SEMIELABORADO": "BARRILETE (8G) 18B 50U ES", "prog": 555.0, "notif": 0.0, "pend": 555.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186789, "SEMIELABORADO": "BARRILETE (8G) 18B 50U G2 V2", "prog": 3000.0, "notif": 258.0, "pend": 2742.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186682, "SEMIELABORADO": "BARRILETE (8g) 18B 50U C1", "prog": 400.0, "notif": 0.0, "pend": 400.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Caramelos Duros 1", "PROCESO": "Embolsado", "ORDEN": 5186806, "SEMIELABORADO": "MENTA HELADA (3.8G) 24B 100U C1", "prog": 1236.0, "notif": 0.0, "pend": 1236.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186808, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 12D 12U C1", "prog": 1473.0, "notif": 0.0, "pend": 1473.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186793, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 12D 12U G2", "prog": 400.0, "notif": 0.0, "pend": 400.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186859, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 12D 12U C6", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupeta Revolcón", "PROCESO": "Embolsado", "ORDEN": 5186877, "SEMIELABORADO": "REVOLCON CHUPETA (21G) 6D 12U C1", "prog": 350.0, "notif": 0.0, "pend": 350.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186884, "SEMIELABORADO": "BIG BEN CHUPETA SURTIDA (13g) 18B 24U C1", "prog": 635.0, "notif": 0.0, "pend": 635.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186681, "SEMIELABORADO": "LOKIÑO CHUPETA SURTIDA (19G) 15B 24U C1", "prog": 400.0, "notif": 0.0, "pend": 400.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186899, "SEMIELABORADO": "ULA ULA CHUPETA SURT (13G) 15B 48U C1", "prog": 1100.0, "notif": 0.0, "pend": 1100.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186433, "SEMIELABORADO": "LOKIÑO CHUPETA FRESA (24G) 8B 48U C1", "prog": 500.0, "notif": 0.0, "pend": 500.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186816, "SEMIELABORADO": "BARRILETE CHUPETA (19G) 15B 24U C1", "prog": 1350.0, "notif": 0.0, "pend": 1350.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186694, "SEMIELABORADO": "LOKIÑO CHUPETA FRESA (24G) 8B 48U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 2", "PROCESO": "Embolsado", "ORDEN": 5186693, "SEMIELABORADO": "LOKIÑO CHUPETA SURTIDA (24G) 8B 48U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186423, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U C1", "prog": 7848.0, "notif": 5022.0, "pend": 2826.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186813, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U C1", "prog": 5785.0, "notif": 0.0, "pend": 5785.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186791, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U G2", "prog": 325.0, "notif": 0.0, "pend": 325.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186708, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U C1", "prog": 260.0, "notif": 0.0, "pend": 260.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186688, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U C1", "prog": 500.0, "notif": 0.0, "pend": 500.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186723, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U G2", "prog": 117.0, "notif": 0.0, "pend": 117.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186796, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U G2", "prog": 745.0, "notif": 0.0, "pend": 745.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186804, "SEMIELABORADO": "LOKIÑO (4G) 24B 100U C1", "prog": 1255.0, "notif": 0.0, "pend": 1255.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186460, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 4716.0, "notif": 1854.0, "pend": 2862.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186459, "SEMIELABORADO": "CHAO LIMON (3.5G) 24B 100U C1", "prog": 300.0, "notif": 84.0, "pend": 216.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186462, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 500.0, "notif": 384.0, "pend": 116.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186740, "SEMIELABORADO": "CHAO MENTA (3.5G) 24B 100U C1", "prog": 100.0, "notif": 0.0, "pend": 100.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186715, "SEMIELABORADO": "CHAO MENTA (3.5G) 24B 100U C1", "prog": 312.0, "notif": 62.0, "pend": 250.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186717, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 156.0, "notif": 0.0, "pend": 156.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186703, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186739, "SEMIELABORADO": "CHAO XTREME ORIGINAL (3.5g) 24B 100U C1", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186714, "SEMIELABORADO": "CHAO XTREME ORIGINAL (3.5g) 24B 100U C1", "prog": 65.0, "notif": 12.0, "pend": 53.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186698, "SEMIELABORADO": "CHAO XTREME ORIGINAL (3.5g) 24B 100U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186889, "SEMIELABORADO": "CHAO FRESA 3.5G 24B 100U C6 PLLW", "prog": 400.0, "notif": 398.0, "pend": 2.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186496, "SEMIELABORADO": "CHAO SURTIDO (3.5g) 24B 100U C6 PLLW", "prog": 250.0, "notif": 248.0, "pend": 2.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186890, "SEMIELABORADO": "CHAO SURTIDO (3.5g) 24B 100U C6 PLLW", "prog": 298.0, "notif": 221.0, "pend": 77.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186494, "SEMIELABORADO": "CHAO MENTA (3.5g) 24B 100U C6 PLLW", "prog": 929.0, "notif": 833.0, "pend": 96.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Pillowpack", "PROCESO": "Embolsado", "ORDEN": 5186888, "SEMIELABORADO": "CHAO MENTA (3.5g) 24B 100U C6 PLLW", "prog": 1000.0, "notif": 0.0, "pend": 1000.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186426, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 2425.0, "notif": 493.0, "pend": 1932.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186380, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186330, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 1000.0, "notif": 0.0, "pend": 1000.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186399, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U G2", "prog": 1929.0, "notif": 56.0, "pend": 1873.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186625, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U C1", "prog": 3500.0, "notif": 1489.0, "pend": 2011.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186518, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12B 100U C1", "prog": 3600.0, "notif": 723.0, "pend": 2877.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Líquidos", "PROCESO": "Embolsado", "ORDEN": 5186898, "SEMIELABORADO": "REVOLCÓN GEL (35g) 6D 12U C1", "prog": 170.0, "notif": 0.0, "pend": 170.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186819, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 1308.0, "notif": 0.0, "pend": 1308.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186441, "SEMIELABORADO": "BIG BEN CLASICOS (5.5G) 18B 100U C1", "prog": 2000.0, "notif": 1964.0, "pend": 36.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186825, "SEMIELABORADO": "BIG BEN CLASICOS (5.5G) 18B 100U C1", "prog": 925.0, "notif": 0.0, "pend": 925.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186403, "SEMIELABORADO": "BIG BEN CLASICOS (5.5G) 18B 100U G2 V2", "prog": 2000.0, "notif": 1820.0, "pend": 180.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186692, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "PROCESO": "Embolsado", "ORDEN": 5186421, "SEMIELABORADO": "LOKIÑO MINIS FRUTALES (30G) 12D 12U C1", "prog": 1580.0, "notif": 0.0, "pend": 1580.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "PROCESO": "Embolsado", "ORDEN": 5186349, "SEMIELABORADO": "LOKIÑO MINIS FRUTALES (30G) 12D 12U C1", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000093, "SEMIELABORADO": "PIÑATA SURTIDA 2B 4K C6", "prog": 57.0, "notif": 0.0, "pend": 57.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000091, "SEMIELABORADO": "PIÑATA SURTIDA 3B 2.27K NUEVO MIX C6", "prog": 133.0, "notif": 0.0, "pend": 133.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 99000092, "SEMIELABORADO": "PIÑATA SURTIDA 6B 1K NUEVO MIX C6", "prog": 697.0, "notif": 0.0, "pend": 697.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186902, "SEMIELABORADO": "PIÑATA 12B 500G CAD C1 V2", "prog": 1115.0, "notif": 0.0, "pend": 1115.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186903, "SEMIELABORADO": "PIÑATA SURTIDA 6B 1K C1 V2", "prog": 620.0, "notif": 0.0, "pend": 620.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186904, "SEMIELABORADO": "PIÑATA SURTIDA 6B 1K PE V3", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186906, "SEMIELABORADO": "PIÑATA SURTIDA 6B 1K NUEVO MIX C6 V2", "prog": 1500.0, "notif": 0.0, "pend": 1500.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186907, "SEMIELABORADO": "PIÑATA SURTIDA 2B 4K C6 V2", "prog": 1350.0, "notif": 0.0, "pend": 1350.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Pitilladora", "PROCESO": "Embolsado", "ORDEN": 5186824, "SEMIELABORADO": "REVOLCON ATOMOS (3.8g) 24D 48U C1", "prog": 316.0, "notif": 0.0, "pend": 316.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186455, "SEMIELABORADO": "OKA LOKA NANOS MIX (40g) 24BA 6U C1", "prog": 200.0, "notif": 83.0, "pend": 117.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186410, "SEMIELABORADO": "OKA LOKA NANOS (40g) 12BA 12U C1", "prog": 946.0, "notif": 606.0, "pend": 340.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186400, "SEMIELABORADO": "OKA LOKA NANOS (40g) 12BA 12U g2", "prog": 400.0, "notif": 0.0, "pend": 400.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Termoencogido", "PROCESO": "Embolsado", "ORDEN": 5186411, "SEMIELABORADO": "OKA LOKA NANOS (40g) 12BA 12U CAD C1", "prog": 1500.0, "notif": 100.0, "pend": 1400.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186734, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 50U ES", "prog": 250.0, "notif": 0.0, "pend": 250.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186810, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 70G CAD C1", "prog": 2970.0, "notif": 0.0, "pend": 2970.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186687, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 50U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "PROCESO": "Embolsado", "ORDEN": 5186900, "SEMIELABORADO": "BIANCHI LECHE (6g) 18B 110U C7", "prog": 1100.0, "notif": 0.0, "pend": 1100.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 1", "PROCESO": "Embolsado", "ORDEN": 5186901, "SEMIELABORADO": "BIANCHI BLANCO (6g) 18B 110U C7", "prog": 4150.0, "notif": 0.0, "pend": 4150.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186450, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 12311.0, "notif": 5251.0, "pend": 7060.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186449, "SEMIELABORADO": "REVOLCON CARAMELO FRIO(5G)12B 50U C1 V2", "prog": 608.0, "notif": 605.0, "pend": 3.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186615, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186738, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186713, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 252.0, "notif": 0.0, "pend": 252.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186696, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186826, "SEMIELABORADO": "YOGGER MAST RELLENO 4GR 18B X 100U C1", "prog": 4700.0, "notif": 0.0, "pend": 4700.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 4", "PROCESO": "Embolsado", "ORDEN": 5186909, "SEMIELABORADO": "BIANCHI BLANCO (4G) 24B 40U C1", "prog": 2000.0, "notif": 0.0, "pend": 2000.0, "UN": "PAC", "FECHA_CIERRE_STR": "20/04/2026", "ESTADO": "Abierta"}]}, "17": {"formacion": [], "embolsado": [{"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "prog_pac": 6416.0, "notif_pac": 104.0, "pend_pac": 6312.0, "avance_pct": 0.0162}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle cubo", "prog_pac": 501.0, "notif_pac": 0.0, "pend_pac": 501.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "prog_pac": 905.0, "notif_pac": 0.0, "pend_pac": 905.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "prog_pac": 66.0, "notif_pac": 0.0, "pend_pac": 66.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "prog_pac": 20.0, "notif_pac": 0.0, "pend_pac": 20.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "prog_pac": 268.0, "notif_pac": 0.0, "pend_pac": 268.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "prog_pac": 12750.0, "notif_pac": 0.0, "pend_pac": 12750.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "prog_pac": 3900.0, "notif_pac": 0.0, "pend_pac": 3900.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "prog_pac": 3159.0, "notif_pac": 0.0, "pend_pac": 3159.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "prog_pac": 1782.0, "notif_pac": 0.0, "pend_pac": 1782.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "prog_pac": 2050.0, "notif_pac": 0.0, "pend_pac": 2050.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "prog_pac": 668.0, "notif_pac": 0.0, "pend_pac": 668.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "prog_pac": 300.0, "notif_pac": 0.0, "pend_pac": 300.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "prog_pac": 9283.0, "notif_pac": 224.0, "pend_pac": 9059.0, "avance_pct": 0.0241}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 6", "prog_pac": 250.0, "notif_pac": 0.0, "pend_pac": 250.0, "avance_pct": 0.0}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 7", "prog_pac": 2564.0, "notif_pac": 0.0, "pend_pac": 2564.0, "avance_pct": 0.0}, {"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "prog_pac": 3236.0, "notif_pac": 0.0, "pend_pac": 3236.0, "avance_pct": 0.0}], "ordenes_emb": [{"PLANTA": "Planta 1", "LÍNEA": "Comprimidos", "PROCESO": "2 Embolsado", "ORDEN": 5186838, "SEMIELABORADO": "CHAO PASTILLA CER (20.4g)12BA 16T  C1 V2", "prog": 3236.0, "notif": 0.0, "pend": 3236.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186763, "SEMIELABORADO": "BARRILETE (8G) 18B 50U CL V2", "prog": 450.0, "notif": 0.0, "pend": 450.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186820, "SEMIELABORADO": "BARRILETE (8g) 18B 50U C1", "prog": 3691.0, "notif": 0.0, "pend": 3691.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Barras 1", "PROCESO": "Embolsado", "ORDEN": 5186745, "SEMIELABORADO": "BARRILETE (8g) 18B 50U C1", "prog": 2275.0, "notif": 104.0, "pend": 2171.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle cubo", "PROCESO": "Embolsado", "ORDEN": 5186811, "SEMIELABORADO": "BOMBAZO CHICLE BOMBA (5G) 24B 50U C1", "prog": 501.0, "notif": 0.0, "pend": 501.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186783, "SEMIELABORADO": "OKA LOKA CHICLE POLVO (12G) 18D 12U MX", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186784, "SEMIELABORADO": "OKA LOKA CHICLE POLVO2.0(12g) 18D 12U MX", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chicle polvo", "PROCESO": "Embolsado", "ORDEN": 5186785, "SEMIELABORADO": "OKA LOKA CHICLE POLVO2.0(12g) 18D 12U MX", "prog": 5.0, "notif": 0.0, "pend": 5.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Chupetas 1", "PROCESO": "Embolsado", "ORDEN": 5186776, "SEMIELABORADO": "BIG BEN CLASICOS (5.5G) 6B 5LB US PNO", "prog": 66.0, "notif": 0.0, "pend": 66.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 1", "PROCESO": "Embolsado", "ORDEN": 5186748, "SEMIELABORADO": "RICATO CARAMELO (7.5G) 18B 50U C1", "prog": 20.0, "notif": 0.0, "pend": 20.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Diti 2", "PROCESO": "Embolsado", "ORDEN": 5186777, "SEMIELABORADO": "LOKIÑO (4G) 6B 5LB US PNO", "prog": 268.0, "notif": 0.0, "pend": 268.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186853, "SEMIELABORADO": "CHAO MENTA (3.5g) 24B 50U C6", "prog": 150.0, "notif": 0.0, "pend": 150.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186845, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 4212.0, "notif": 0.0, "pend": 4212.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186751, "SEMIELABORADO": "CHAO FRESA (3.5g) 24B 100 U C1", "prog": 60.0, "notif": 0.0, "pend": 60.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186843, "SEMIELABORADO": "CHAO MENTA (3.5G) 24B 100U C1", "prog": 3200.0, "notif": 0.0, "pend": 3200.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186844, "SEMIELABORADO": "CHAO LIMON (3.5G) 24B 100U C1", "prog": 1300.0, "notif": 0.0, "pend": 1300.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186846, "SEMIELABORADO": "CHAO SANDIA (3.5G) 24B 100U C1", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186847, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 2000.0, "notif": 0.0, "pend": 2000.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186848, "SEMIELABORADO": "CHAO MENTA (3.5g) 24B 50U C1", "prog": 900.0, "notif": 0.0, "pend": 900.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186782, "SEMIELABORADO": "CHAO MENTA (3.5G) 24B 100U C1", "prog": 498.0, "notif": 0.0, "pend": 498.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186750, "SEMIELABORADO": "CHAO MENTA (3.5G) 24B 100U C1", "prog": 70.0, "notif": 0.0, "pend": 70.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186769, "SEMIELABORADO": "CHAO LIMON (3.5G) 24B 100U C1", "prog": 2.0, "notif": 0.0, "pend": 2.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186770, "SEMIELABORADO": "CHAO LIMON (3.5G) 24B 100U C1", "prog": 18.0, "notif": 0.0, "pend": 18.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186752, "SEMIELABORADO": "CHAO MORA AZUL (3.5G) 24B 100U C1", "prog": 30.0, "notif": 0.0, "pend": 30.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Envoltura Doble Twist", "PROCESO": "Embolsado", "ORDEN": 5186771, "SEMIELABORADO": "CHAO XTREME ORIGINAL (3.5g) 24B 100U C1", "prog": 10.0, "notif": 0.0, "pend": 10.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186815, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 1780.0, "notif": 0.0, "pend": 1780.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186744, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 1520.0, "notif": 0.0, "pend": 1520.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186691, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U C1", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gomas", "PROCESO": "Embolsado", "ORDEN": 5186794, "SEMIELABORADO": "TRULULU FEROZ (18G) 12D 25U G2", "prog": 400.0, "notif": 0.0, "pend": 400.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186818, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U C1", "prog": 2900.0, "notif": 0.0, "pend": 2900.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186778, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U C1", "prog": 59.0, "notif": 0.0, "pend": 59.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Gusanos", "PROCESO": "Embolsado", "ORDEN": 5186761, "SEMIELABORADO": "TRULULU GUSANOS ACIDOS 12P 200U G2 V2", "prog": 200.0, "notif": 0.0, "pend": 200.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186799, "SEMIELABORADO": "BIG BEN CLASICOS (5.5G) 18B 100U G2 V2", "prog": 1641.0, "notif": 0.0, "pend": 1641.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186786, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 49.0, "notif": 0.0, "pend": 49.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186764, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 12.0, "notif": 0.0, "pend": 12.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186768, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Masticables Frutales 1", "PROCESO": "Embolsado", "ORDEN": 5186749, "SEMIELABORADO": "CAFE GURME (5.5G) 36B 50U C1", "prog": 30.0, "notif": 0.0, "pend": 30.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "PROCESO": "Embolsado", "ORDEN": 5186860, "SEMIELABORADO": "LOKIÑO MINIS FRUT ROJOS (30G) 12D 12U C1", "prog": 2000.0, "notif": 0.0, "pend": 2000.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Minigrageas (Ovnis)", "PROCESO": "Embolsado", "ORDEN": 5186765, "SEMIELABORADO": "LOKIÑO MINIS FRUT ROJOS (30G) 12D 12U C1", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Piñatas", "PROCESO": "Embolsado", "ORDEN": 5186905, "SEMIELABORADO": "PIÑATA SURTIDA 3B 2.27K NUEVO MIX C6 V2", "prog": 668.0, "notif": 0.0, "pend": 668.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Turrones 1", "PROCESO": "Embolsado", "ORDEN": 5186756, "SEMIELABORADO": "SUPERCOCO TURRON (5G) 24B 50U US", "prog": 300.0, "notif": 0.0, "pend": 300.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186792, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C2", "prog": 336.0, "notif": 0.0, "pend": 336.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186832, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 7239.0, "notif": 0.0, "pend": 7239.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186831, "SEMIELABORADO": "REVOLCON CARAMELO FRIO(5G)12B 50U C1 V2", "prog": 1008.0, "notif": 224.0, "pend": 784.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186781, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186779, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 50.0, "notif": 0.0, "pend": 50.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 3", "PROCESO": "Embolsado", "ORDEN": 5186747, "SEMIELABORADO": "REVOLCON CARAMELO (5G) 12B 50U C1 V2", "prog": 600.0, "notif": 0.0, "pend": 600.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 6", "PROCESO": "Embolsado", "ORDEN": 5186870, "SEMIELABORADO": "CHAO MENTAS FRUSH (30G) 12D 12U C1", "prog": 250.0, "notif": 0.0, "pend": 250.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}, {"PLANTA": "Embolsado", "LÍNEA": "Uniplast 7", "PROCESO": "Embolsado", "ORDEN": 5186882, "SEMIELABORADO": "CAFE GURME DURO (3.5G) 18B 100U C1", "prog": 2564.0, "notif": 0.0, "pend": 2564.0, "UN": "PAC", "FECHA_CIERRE_STR": "27/04/2026", "ESTADO": "Abierta"}]}}};
+let currentTab = 'formacion';
+let filteredForm = [], filteredEmb = [], filteredOrd = [];
+let chFormAvance, chFormPN, chEmbAvance, chEmbPN;
+
+const fmt  = n => n==null?'—':Number(n).toLocaleString('es-CO',{maximumFractionDigits:1});
+const fmt0  = n => n==null?'—':Number(n).toLocaleString('es-CO',{maximumFractionDigits:0});
+const pct  = n => n==null?'—':(Number(n)*100).toFixed(1)+'%';
+const pctC = v => v>=.7?'var(--green)':v>=.5?'var(--yellow)':v>=.3?'var(--orange)':'var(--red)';
+const badge = v => {
+  const p=v*100;
+  if(p>=70) return '<span class="badge b-green">OK</span>';
+  if(p>=50) return '<span class="badge b-yellow">Bajo</span>';
+  if(p>=30) return '<span class="badge b-orange">Medio</span>';
+  return '<span class="badge b-red">Crítico</span>';
+};
+const pbar = (v,c) => `<span class="pbar"><span class="pfill" style="width:${Math.min(v*100,100).toFixed(1)}%;background:${c}"></span></span>`;
+
+// ── Init selects ──────────────────────────────────────────────────────────────
+function init() {
+  const ss = document.getElementById('sel-semana');
+  DB.meta.semanas.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = DB.meta.semana_labels[s] || 'S'+s;
+    ss.appendChild(o);
+  });
+  const sp = document.getElementById('sel-planta');
+  DB.meta.plantas.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p; sp.appendChild(o);
+  });
+}
+
+// ── Semana change ─────────────────────────────────────────────────────────────
+function onSemanaChange() {
+  const s = document.getElementById('sel-semana').value;
+  if(!s){ document.getElementById('semana-title').textContent='Selecciona una semana'; return; }
+  document.getElementById('semana-title').textContent = DB.meta.semana_labels[s]||'Semana '+s;
+  document.getElementById('header-sub').textContent = DB.meta.semana_labels[s]||'Semana '+s;
+  populateLinea(s);
+  document.getElementById('sel-linea').disabled = false;
+  document.getElementById('sel-proceso').innerHTML='<option value="">Todos los procesos</option>';
+  document.getElementById('sel-proceso').disabled = true;
+  applyFilters();
+}
+
+// ── Línea change ──────────────────────────────────────────────────────────────
+function onLineaChange() {
+  const s = document.getElementById('sel-semana').value;
+  const l = document.getElementById('sel-linea').value;
+  populateProceso(s, l);
+  applyFilters();
+}
+
+function populateLinea(semana) {
+  const sel = document.getElementById('sel-linea');
+  const sd = DB.data[semana];
+  if(!sd){ sel.innerHTML='<option value="">Todas las líneas</option>'; return; }
+  const lineas = [...new Set([
+    ...sd.formacion.map(r=>r['LÍNEA']),
+    ...sd.embolsado.map(r=>r['LÍNEA'])
+  ])].sort();
+  sel.innerHTML = '<option value="">Todas las líneas</option>';
+  lineas.forEach(l => sel.innerHTML += `<option>${l}</option>`);
+}
+
+function populateProceso(semana, linea) {
+  const sel = document.getElementById('sel-proceso');
+  sel.innerHTML = '<option value="">Todos los procesos</option>';
+  const opts = [];
+  if(!linea){ sel.disabled=true; return; }
+  const sd = DB.data[semana];
+  if(!sd){ sel.disabled=true; return; }
+  const hasForm = sd.formacion.some(r=>r['LÍNEA']===linea);
+  const hasEmb  = sd.embolsado.some(r=>r['LÍNEA']===linea);
+  if(hasForm) opts.push('Formación');
+  if(hasEmb)  opts.push('Embolsado');
+  opts.forEach(p => sel.innerHTML += `<option>${p}</option>`);
+  sel.disabled = opts.length === 0;
+}
+
+// ── Apply filters ─────────────────────────────────────────────────────────────
+function applyFilters() {
+  const s  = document.getElementById('sel-semana').value;
+  const l  = document.getElementById('sel-linea').value;
+  const pr = document.getElementById('sel-proceso').value;
+  const pl = document.getElementById('sel-planta').value;
+  if(!s){ filteredForm=[]; filteredEmb=[]; filteredOrd=[]; updateAll(); return; }
+  const sd = DB.data[s];
+  filteredForm = sd.formacion.filter(r =>
+    (!pl || r.PLANTA===pl) && (!l || r['LÍNEA']===l) &&
+    (!pr || pr==='Formación'));
+  filteredEmb = sd.embolsado.filter(r =>
+    (!pl || r.PLANTA===pl) && (!l || r['LÍNEA']===l) &&
+    (!pr || pr==='Embolsado'));
+  filteredOrd = sd.ordenes_emb.filter(r =>
+    (!pl || r.PLANTA===pl) && (!l || r['LÍNEA']===l));
+  updateAll();
+}
+
+function resetDependentFilters() {
+  document.getElementById('sel-linea').innerHTML='<option value="">Todas las líneas</option>';
+  document.getElementById('sel-linea').disabled=true;
+  document.getElementById('sel-proceso').innerHTML='<option value="">Todos los procesos</option>';
+  document.getElementById('sel-proceso').disabled=true;
+  const s = document.getElementById('sel-semana').value;
+  if(s) { populateLinea(s); document.getElementById('sel-linea').disabled=false; }
+  applyFilters();
+}
+
+// ── Tab switch ────────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-formacion').style.display = tab==='formacion'?'':'none';
+  document.getElementById('tab-embolsado').style.display = tab==='embolsado'?'':'none';
+}
+
+// ── Update all ────────────────────────────────────────────────────────────────
+function updateAll() {
+  updateFormacion();
+  updateEmbolsado();
+}
+
+// ── FORMACIÓN ─────────────────────────────────────────────────────────────────
+function updateFormacion() {
+  const data = filteredForm;
+  const prog  = data.reduce((s,r)=>s+(r.prog_t||0),0);
+  const notif = data.reduce((s,r)=>s+(r.notif_t||0),0);
+  const pend  = data.reduce((s,r)=>s+(r.pend_t||0),0);
+  const av    = prog>0 ? notif/prog : 0;
+  document.getElementById('kf-prog').textContent   = fmt(prog)+' t';
+  document.getElementById('kf-notif').textContent  = fmt(notif)+' t';
+  document.getElementById('kf-pend').textContent   = fmt(pend)+' t';
+  document.getElementById('kf-avance').textContent = (av*100).toFixed(1)+'%';
+  document.getElementById('kf-avance').style.color = pctC(av);
+  document.getElementById('kf-lineas').textContent = data.length;
+
+  // Charts
+  const sorted = [...data].sort((a,b)=>a.avance_pct-b.avance_pct);
+  const labels = sorted.map(r=>r['LÍNEA']);
+  const avPct  = sorted.map(r=>(r.avance_pct||0)*100);
+  const colors = avPct.map(v=>v>=70?'#22c55e':v>=50?'#f59e0b':v>=30?'#f97316':'#ef4444');
+
+  if(chFormAvance) chFormAvance.destroy();
+  chFormAvance = new Chart(document.getElementById('ch-form-avance'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Avance %',data:avPct,backgroundColor:colors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toFixed(1)+'%'}}},
+      scales:{x:{ticks:{color:'#7a8aaa',font:{size:10}},grid:{color:'#252b42'}},
+              y:{min:0,max:100,ticks:{color:'#7a8aaa',callback:v=>v+'%'},grid:{color:'#252b42'}}}}
+  });
+
+  if(chFormPN) chFormPN.destroy();
+  chFormPN = new Chart(document.getElementById('ch-form-pn'),{
+    type:'bar',
+    data:{labels:sorted.map(r=>r['LÍNEA']),datasets:[
+      {label:'Prog (t)',data:sorted.map(r=>r.prog_t||0),backgroundColor:'rgba(79,142,247,.5)',borderColor:'#4f8ef7',borderWidth:1,borderRadius:3},
+      {label:'Notif (t)',data:sorted.map(r=>r.notif_t||0),backgroundColor:'rgba(34,197,94,.5)',borderColor:'#22c55e',borderWidth:1,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7a8aaa',font:{size:10}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(2)+' t'}}},
+      scales:{x:{ticks:{color:'#7a8aaa',font:{size:10}},grid:{color:'#252b42'}},
+              y:{ticks:{color:'#7a8aaa',callback:v=>v+'t'},grid:{color:'#252b42'}}}}
+  });
+
+  // Tabla detalle
+  document.getElementById('tbody-form').innerHTML = data.length===0
+    ? '<tr><td colspan="7" class="empty">Sin datos para la selección</td></tr>'
+    : [...data].sort((a,b)=>a.avance_pct-b.avance_pct).map(r=>{
+        const av=r.avance_pct||0;
+        return `<tr>
+          <td>${r.PLANTA}</td><td><strong>${r['LÍNEA']}</strong></td>
+          <td>${fmt(r.prog_t)}</td><td style="color:var(--green)">${fmt(r.notif_t)}</td>
+          <td style="color:var(--orange)">${fmt(r.pend_t)}</td>
+          <td>${pbar(av,pctC(av))}<span style="color:${pctC(av)};font-weight:600">${pct(av)}</span></td>
+          <td>${badge(av)}</td>
+        </tr>`;
+      }).join('');
+
+  // Top 5 críticas
+  const top5 = [...data].sort((a,b)=>(b.criticidad||0)-(a.criticidad||0)).slice(0,5);
+  document.getElementById('tbody-criticas').innerHTML = top5.length===0
+    ? '<tr><td colspan="6" class="empty">Sin datos</td></tr>'
+    : top5.map((r,i)=>{
+        const av=r.avance_pct||0;
+        return `<tr>
+          <td><strong style="color:var(--accent)">${i+1}</strong></td>
+          <td>${r.PLANTA}</td><td><strong>${r['LÍNEA']}</strong></td>
+          <td>${pbar(av,pctC(av))}<span style="color:${pctC(av)};font-weight:600">${pct(av)}</span></td>
+          <td style="color:var(--orange)">${fmt(r.pend_t)} t</td>
+          <td><span style="color:var(--red);font-weight:600">${fmt0(r.criticidad)}</span></td>
+        </tr>`;
+      }).join('');
+}
+
+// ── EMBOLSADO ─────────────────────────────────────────────────────────────────
+function updateEmbolsado() {
+  const data = filteredEmb;
+  const prog  = data.reduce((s,r)=>s+(r.prog_pac||0),0);
+  const notif = data.reduce((s,r)=>s+(r.notif_pac||0),0);
+  const pend  = data.reduce((s,r)=>s+(r.pend_pac||0),0);
+  const av    = prog>0 ? notif/prog : 0;
+  document.getElementById('ke-prog').textContent   = fmt0(prog);
+  document.getElementById('ke-notif').textContent  = fmt0(notif);
+  document.getElementById('ke-pend').textContent   = fmt0(pend);
+  document.getElementById('ke-avance').textContent = (av*100).toFixed(1)+'%';
+  document.getElementById('ke-avance').style.color = pctC(av);
+  document.getElementById('ke-lineas').textContent = data.length;
+
+  const sorted = [...data].sort((a,b)=>a.avance_pct-b.avance_pct);
+  const labels = sorted.map(r=>r['LÍNEA']);
+  const avPct  = sorted.map(r=>(r.avance_pct||0)*100);
+  const colors = avPct.map(v=>v>=70?'#22c55e':v>=50?'#f59e0b':v>=30?'#f97316':'#ef4444');
+
+  if(chEmbAvance) chEmbAvance.destroy();
+  chEmbAvance = new Chart(document.getElementById('ch-emb-avance'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Avance %',data:avPct,backgroundColor:colors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toFixed(1)+'%'}}},
+      scales:{x:{ticks:{color:'#7a8aaa',font:{size:10}},grid:{color:'#252b42'}},
+              y:{min:0,max:100,ticks:{color:'#7a8aaa',callback:v=>v+'%'},grid:{color:'#252b42'}}}}
+  });
+
+  if(chEmbPN) chEmbPN.destroy();
+  chEmbPN = new Chart(document.getElementById('ch-emb-pn'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Prog (PAC)',data:sorted.map(r=>r.prog_pac||0),backgroundColor:'rgba(79,142,247,.5)',borderColor:'#4f8ef7',borderWidth:1,borderRadius:3},
+      {label:'Notif (PAC)',data:sorted.map(r=>r.notif_pac||0),backgroundColor:'rgba(34,197,94,.5)',borderColor:'#22c55e',borderWidth:1,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7a8aaa',font:{size:10}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt0(c.parsed.y)}}},
+      scales:{x:{ticks:{color:'#7a8aaa',font:{size:10}},grid:{color:'#252b42'}},
+              y:{ticks:{color:'#7a8aaa',callback:v=>fmt0(v)},grid:{color:'#252b42'}}}}
+  });
+
+  // Tabla embolsado
+  document.getElementById('tbody-emb').innerHTML = data.length===0
+    ? '<tr><td colspan="7" class="empty">Sin datos para la selección</td></tr>'
+    : sorted.map(r=>{
+        const av=r.avance_pct||0;
+        return `<tr>
+          <td>${r.PLANTA}</td><td><strong>${r['LÍNEA']}</strong></td>
+          <td>${fmt0(r.prog_pac)}</td><td style="color:var(--green)">${fmt0(r.notif_pac)}</td>
+          <td style="color:var(--orange)">${fmt0(r.pend_pac)}</td>
+          <td>${pbar(av,pctC(av))}<span style="color:${pctC(av)};font-weight:600">${pct(av)}</span></td>
+          <td>${badge(av)}</td>
+        </tr>`;
+      }).join('');
+
+  // Órdenes pendientes
+  const ords = filteredOrd;
+  document.getElementById('tbody-ordenes').innerHTML = ords.length===0
+    ? '<tr><td colspan="11" class="empty">Sin órdenes pendientes</td></tr>'
+    : ords.map(r=>`<tr>
+        <td>${r.PLANTA}</td><td><strong>${r['LÍNEA']}</strong></td><td>${r.PROCESO}</td>
+        <td style="color:var(--accent)">${r.ORDEN||'—'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${r.SEMIELABORADO||''}">${r.SEMIELABORADO||'—'}</td>
+        <td>${fmt0(r.prog)}</td><td style="color:var(--green)">${fmt0(r.notif)}</td>
+        <td style="color:var(--orange)">${fmt0(r.pend)}</td>
+        <td>${r.UN||'—'}</td>
+        <td style="color:var(--yellow)">${r.FECHA_CIERRE_STR||'—'}</td>
+        <td>${r.ESTADO==='Abierta'?'<span class="badge b-orange">Abierta</span>':'<span class="badge b-green">Cerrada</span>'}</td>
+      </tr>`).join('');
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
